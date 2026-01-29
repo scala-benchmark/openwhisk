@@ -48,6 +48,7 @@ dependencies {
     }
     api "io.spray:spray-json_${gradle.scala.depVersion}:1.3.5"
     api "com.lihaoyi:fastparse_${gradle.scala.depVersion}:2.3.0"
+    api "org.scala-lang.modules:scala-xml_${gradle.scala.depVersion}:1.3.0"
     api "org.apache.pekko:pekko-actor_${gradle.scala.depVersion}:${gradle.pekko.version}"
     api "org.apache.pekko:pekko-actor-typed_${gradle.scala.depVersion}:${gradle.pekko.version}"
     api "org.apache.pekko:pekko-cluster-typed_${gradle.scala.depVersion}:${gradle.pekko.version}"
@@ -60,6 +61,17 @@ dependencies {
 
     api "org.apache.pekko:pekko-http-core_${gradle.scala.depVersion}:${gradle.pekko_http.version}"
     api "org.apache.pekko:pekko-http-spray-json_${gradle.scala.depVersion}:${gradle.pekko_http.version}"
+    
+    // Play Framework dependencies for CWE-798 and CWE-327
+    api "com.typesafe.play:play-ahc-ws-standalone_${gradle.scala.depVersion}:2.1.2"
+    api "com.typesafe.play:play_${gradle.scala.depVersion}:2.8.8"
+    // Akka dependencies for Play WS compatibility (Play WS requires Akka, not Pekko)
+    api "com.typesafe.akka:akka-actor_${gradle.scala.depVersion}:2.6.20"
+    api "com.typesafe.akka:akka-stream_${gradle.scala.depVersion}:2.6.20"
+    // Hasher dependency for CWE-328
+    api "com.outr:hasher_${gradle.scala.depVersion}:1.2.2"
+    // Cats-effect dependency for CWE-400
+    api "org.typelevel:cats-effect_${gradle.scala.depVersion}:3.5.4"
 
     api "org.apache.pekko:pekko-connectors-file_${gradle.scala.depVersion}:${gradle.pekko_kafka.version}"
 

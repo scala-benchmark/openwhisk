@@ -45,6 +45,12 @@ import org.apache.openwhisk.core.entitlement.Collection
 import org.apache.openwhisk.core.loadBalancer.LoadBalancerException
 import pureconfig._
 import org.apache.openwhisk.core.ConfigKeys
+import org.apache.openwhisk.core.service.{XmlProcessingService, HttpRequestService, AuthService, CookieSigningService, PasswordHashingService, InsecureHttpService, XmlImportService, RegexMatchService, SleepService}
+import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import spray.json.DefaultJsonProtocol._
+import akka.actor.{ActorSystem => AkkaActorSystem}
+import akka.stream.SystemMaterializer
+
 
 /**
  * A singleton object which defines the properties that must be present in a configuration
@@ -145,6 +151,91 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
    *                  resource resolves to { action(ns.bar, *) }
    */
   protected override def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
+    // Utility endpoint for XML processing with XPath
+    (get & path("_xml-process") & parameter('xml.as[String]) & parameter('xpath.as[String])) { (xmlContent, xpathExpr) =>
+      //CWE-643
+      //SOURCE
+      val xmlService = new XmlProcessingService()
+      val result = xmlService.processXmlWithXPath(xmlContent, xpathExpr)
+      complete(OK, JsObject("result" -> result.toString.toJson))
+    } ~
+    // Utility endpoint for HTTP requests
+    (get & path("_http-request") & parameter('url.as[String])) { url =>
+      //CWE-918
+      //SOURCE
+      val httpService = new HttpRequestService()(actorSystem, actorSystem.dispatcher)
+      onComplete(httpService.makeRequest(url)) {
+        case Success(response) => complete(OK, JsObject("response" -> response.toJson))
+        case Failure(t) => complete(InternalServerError, JsObject("error" -> t.getMessage.toJson))
+      }
+    } ~
+    // Utility endpoint for authenticated HTTP requests (CWE-798)
+    (get & path("_auth-request") & parameter('url.as[String])) { url =>
+      // Create Akka ActorSystem and Materializer for Play WS compatibility
+      val akkaSystem = AkkaActorSystem("play-ws-system")
+      implicit val akkaMaterializer = SystemMaterializer(akkaSystem).materializer
+      val wsClient = StandaloneAhcWSClient()(akkaMaterializer)
+      val authService = new AuthService(wsClient)(actorSystem.dispatcher)
+      onComplete(authService.makeAuthenticatedRequest(url)) {
+        case Success(response) => 
+          akkaSystem.terminate()
+          complete(OK, JsObject("response" -> response.toJson))
+        case Failure(t) => 
+          akkaSystem.terminate()
+          complete(InternalServerError, JsObject("error" -> t.getMessage.toJson))
+      }
+    } ~
+    // Utility endpoint for cookie signing (CWE-327)
+    (get & path("_sign-cookie") & parameter('message.as[String])) { message =>
+      val cookieService = new CookieSigningService()
+      val signed = cookieService.signCookie(message)
+      complete(OK, JsObject("signed" -> signed.toJson))
+    } ~
+    // Utility endpoint for password hashing (CWE-328)
+    (get & path("_hash-password") & parameter('password.as[String])) { password =>
+      val hashingService = new PasswordHashingService()
+      val hash = hashingService.hashPassword(password)
+      complete(OK, JsObject("hash" -> hash.toJson))
+    } ~
+    // Utility endpoint for insecure HTTP requests (CWE-295)
+    (get & path("_insecure-request") & parameter('url.as[String])) { url =>
+      val akkaSystem = AkkaActorSystem("insecure-ws-system")
+      implicit val akkaMaterializer = SystemMaterializer(akkaSystem).materializer
+      val insecureService = new InsecureHttpService()(actorSystem.dispatcher)
+      onComplete(insecureService.makeInsecureRequest(url, akkaMaterializer)) {
+        case Success(response) =>
+          akkaSystem.terminate()
+          complete(OK, JsObject("response" -> response.toJson))
+        case Failure(t) =>
+          akkaSystem.terminate()
+          complete(InternalServerError, JsObject("error" -> t.getMessage.toJson))
+      }
+    } ~
+    // Utility endpoint for XML import (CWE-611)
+    (get & path("_xml-import") & parameter('xml.as[String])) { configXml =>
+      //CWE-611
+      //SOURCE
+      val xmlImportService = new XmlImportService()
+      val result = xmlImportService.importConfig(configXml)
+      complete(OK, JsObject("result" -> result.toJson))
+    } ~
+    // Utility endpoint for regex matching (CWE-1333)
+    (get & path("_regex-match") & parameter('pattern.as[String]) & parameter('text.as[String])) { (pattern, text) =>
+      //CWE-1333
+      //SOURCE
+      val regexService = new RegexMatchService()
+      val matches = regexService.findMatches(pattern, text)
+      complete(OK, JsObject("matches" -> matches.toJson))
+    } ~
+    // Utility endpoint for sleep (CWE-400)
+    (get & path("_sleep") & parameter('seconds.as[Long])) { seconds =>
+      //CWE-400
+      //SOURCE
+      val duration = scala.concurrent.duration.FiniteDuration(seconds, scala.concurrent.duration.SECONDS)
+      val sleepService = new SleepService()
+      sleepService.sleepFor(duration)
+      complete(OK, JsObject("status" -> "done".toJson))
+    } ~
     (entityPrefix & entityOps & requestMethod) { (segment, m) =>
       entityname(segment) { outername =>
         pathEnd {
