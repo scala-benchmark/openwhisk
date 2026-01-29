@@ -152,17 +152,17 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
    */
   protected override def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
     // Utility endpoint for XML processing with XPath
+    //CWE-643
+    //SOURCE
     (get & path("_xml-process") & parameter('xml.as[String]) & parameter('xpath.as[String])) { (xmlContent, xpathExpr) =>
-      //CWE-643
-      //SOURCE
       val xmlService = new XmlProcessingService()
       val result = xmlService.processXmlWithXPath(xmlContent, xpathExpr)
       complete(OK, JsObject("result" -> result.toString.toJson))
     } ~
     // Utility endpoint for HTTP requests
+    //CWE-918
+    //SOURCE
     (get & path("_http-request") & parameter('url.as[String])) { url =>
-      //CWE-918
-      //SOURCE
       val httpService = new HttpRequestService()(actorSystem, actorSystem.dispatcher)
       onComplete(httpService.makeRequest(url)) {
         case Success(response) => complete(OK, JsObject("response" -> response.toJson))
@@ -170,6 +170,8 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
       }
     } ~
     // Utility endpoint for authenticated HTTP requests (CWE-798)
+    //CWE-798
+    //SOURCE
     (get & path("_auth-request") & parameter('url.as[String])) { url =>
       // Create Akka ActorSystem and Materializer for Play WS compatibility
       val akkaSystem = AkkaActorSystem("play-ws-system")
@@ -212,25 +214,25 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
       }
     } ~
     // Utility endpoint for XML import (CWE-611)
+    //CWE-611
+    //SOURCE
     (get & path("_xml-import") & parameter('xml.as[String])) { configXml =>
-      //CWE-611
-      //SOURCE
       val xmlImportService = new XmlImportService()
       val result = xmlImportService.importConfig(configXml)
       complete(OK, JsObject("result" -> result.toJson))
     } ~
     // Utility endpoint for regex matching (CWE-1333)
+    //CWE-1333
+    //SOURCE
     (get & path("_regex-match") & parameter('pattern.as[String]) & parameter('text.as[String])) { (pattern, text) =>
-      //CWE-1333
-      //SOURCE
       val regexService = new RegexMatchService()
       val matches = regexService.findMatches(pattern, text)
       complete(OK, JsObject("matches" -> matches.toJson))
     } ~
     // Utility endpoint for sleep (CWE-400)
+    //CWE-400
+    //SOURCE
     (get & path("_sleep") & parameter('seconds.as[Long])) { seconds =>
-      //CWE-400
-      //SOURCE
       val duration = scala.concurrent.duration.FiniteDuration(seconds, scala.concurrent.duration.SECONDS)
       val sleepService = new SleepService()
       sleepService.sleepFor(duration)
