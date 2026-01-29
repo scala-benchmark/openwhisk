@@ -171,7 +171,6 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
     } ~
     // Utility endpoint for authenticated HTTP requests (CWE-798)
     //CWE-798
-    //SOURCE
     (get & path("_auth-request") & parameter('url.as[String])) { url =>
       // Create Akka ActorSystem and Materializer for Play WS compatibility
       val akkaSystem = AkkaActorSystem("play-ws-system")
