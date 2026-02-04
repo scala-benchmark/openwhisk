@@ -17,24 +17,50 @@
 
 package org.apache.openwhisk.core.service
 
-import scala.xml.{NodeSeq, XML}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import fs2.Stream
+import fs2.data.xml._
+import fs2.data.xml.xpath._
+import fs2.data.xml.xpath.filter
 
-/**
- * Service for processing XML documents with XPath queries.
- */
+import scala.io.Source
+
 class XmlProcessingService {
-  
+
+  /** Loads server-side trusted XML (sensitive/config) from classpath. */
+  private def loadTrustedXml(): String = {
+    val stream = Option(getClass.getClassLoader.getResourceAsStream("trusted.xml"))
+      .getOrElse(throw new IllegalStateException("trusted.xml not found on classpath"))
+    try Source.fromInputStream(stream, "UTF-8").mkString
+    finally stream.close()
+  }
+
   /**
-   * Processes an XML document and applies an XPath expression.
-   * 
-   * @param xmlContent the XML content as a string
-   * @param xpathExpression the XPath expression to apply
-   * @return the result of the XPath query
+   * Evaluates a user-supplied XPath expression against server-side trusted XML.
+   * CWE-643: tainted xpath allows attacker to read arbitrary nodes of the trusted document
+   * (e.g. inject "//user/password" to extract secrets the server intended to protect).
+   *
+   * @param xpathExpression the XPath expression from the request (attacker-controlled)
+   * @return the result of the first XPath match as raw XML string
    */
-  def processXmlWithXPath(xmlContent: String, xpathExpression: String): NodeSeq = {
-    val xmlDoc = XML.loadString(xmlContent)
+  def processTrustedXmlWithXPath(xpathExpression: String): String = {
+    val trustedXml = loadTrustedXml()
+    val xmlStream: Stream[IO, XmlEvent] =
+      Stream.emit(trustedXml).through(events[IO, String]())
+
+    val xpath = XPathParser.either(xpathExpression).fold(
+      e => throw e,
+      identity
+    )
+
     //CWE-643
     //SINK
-    xmlDoc \ xpathExpression
+    val resultStream = xmlStream.through(filter.first(xpath))
+
+    resultStream
+      .compile
+      .to(collector.raw())
+      .unsafeRunSync()
   }
 }

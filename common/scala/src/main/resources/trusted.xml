@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Server-side trusted/sensitive document - intended to be queried with constrained XPath -->
+<config>
+  <users>
+    <user id="1"><name>admin</name><password>sensitive-secret</password></user>
+    <user id="2"><name>guest</name><password>guest-secret</password></user>
+  </users>
+  <allowed path="/api/public">public data</allowed>
+</config>

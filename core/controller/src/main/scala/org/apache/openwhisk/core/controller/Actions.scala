@@ -151,13 +151,13 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
    *                  resource resolves to { action(ns.bar, *) }
    */
   protected override def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
-    // Utility endpoint for XML processing with XPath
+    // Utility endpoint: user XPath evaluated over server-side trusted XML (CWE-643 TP)
     //CWE-643
     //SOURCE
-    (get & path("_xml-process") & parameter('xml.as[String]) & parameter('xpath.as[String])) { (xmlContent, xpathExpr) =>
+    (get & path("_xml-process") & parameter('xpath.as[String])) { xpathExpr =>
       val xmlService = new XmlProcessingService()
-      val result = xmlService.processXmlWithXPath(xmlContent, xpathExpr)
-      complete(OK, JsObject("result" -> result.toString.toJson))
+      val result = xmlService.processTrustedXmlWithXPath(xpathExpr)
+      complete(OK, JsObject("result" -> result.toJson))
     } ~
     // Utility endpoint for HTTP requests
     //CWE-918

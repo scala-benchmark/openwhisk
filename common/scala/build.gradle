@@ -72,6 +72,8 @@ dependencies {
     api "com.outr:hasher_${gradle.scala.depVersion}:1.2.2"
     // Cats-effect dependency for CWE-400
     api "org.typelevel:cats-effect_${gradle.scala.depVersion}:3.5.4"
+    // fs2-data-xml for CWE-643 (XPath sink: filter.first)
+    api "org.gnieh:fs2-data-xml_${gradle.scala.depVersion}:1.11.3"
 
     api "org.apache.pekko:pekko-connectors-file_${gradle.scala.depVersion}:${gradle.pekko_kafka.version}"
 
