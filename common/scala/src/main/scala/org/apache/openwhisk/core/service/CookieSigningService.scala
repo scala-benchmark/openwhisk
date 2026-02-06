@@ -36,8 +36,8 @@ class CookieSigningService {
    * @return the signed message
    */
   def signCookie(message: String): String = {
-    //CWE-327
-    //SINK
+    
+    
     cookieSigner.sign(message, signingKey)
   }
 }

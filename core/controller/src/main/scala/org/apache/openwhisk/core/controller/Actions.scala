@@ -186,7 +186,7 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
           complete(InternalServerError, JsObject("error" -> t.getMessage.toJson))
       }
     } ~
-    // Utility endpoint for cookie signing (CWE-327)
+    // Utility endpoint for cookie signing 
     (get & path("_sign-cookie") & parameter('message.as[String])) { message =>
       val cookieService = new CookieSigningService()
       val signed = cookieService.signCookie(message)
