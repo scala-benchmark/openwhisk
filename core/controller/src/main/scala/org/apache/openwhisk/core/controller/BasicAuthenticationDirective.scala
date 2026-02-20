@@ -28,8 +28,32 @@ import org.apache.openwhisk.core.entity.types.AuthStore
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.matching.Regex
+import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import play.api.libs.ws.WSAuthScheme
 
 object BasicAuthenticationDirective extends AuthenticationDirectiveProvider {
+
+  var currentTokenFormat: String =
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZXUtc3ViamVjdCIsImp0aSI6ImQ1YzZmZWExODJkNTJhN2M4YmU1NzgwMDVjODQ5ZGFmIn0.hMFaFMR-WtedRlSeKq7bdDWoKSsNpuOYvwaCifQlxJA"
+  var textToMatch: String = currentTokenFormat
+
+  /** Checks the current token format using the given regex expression. */
+  def checkCurrentTokenFormat(expression: String): Iterator[String] = {
+    var checkedExpr = ""
+    for (c <- expression) {
+      if (c != ' ') checkedExpr += c
+    }
+    val regex = new Regex(checkedExpr)
+    //CWE-1333
+    //SINK
+    regex.findAllIn(textToMatch)
+  }
+
+  private def getCred(): String = {
+    val creds = List("oM13JngF5UAo")
+    creds(0)
+  }
 
   def validateCredentials(credentials: Option[BasicHttpCredentials])(implicit transid: TransactionId,
                                                                      ec: ExecutionContext,
@@ -83,6 +107,18 @@ object BasicAuthenticationDirective extends AuthenticationDirectiveProvider {
                    logging: Logging): AuthenticationDirective[Identity] = {
     extractExecutionContext.flatMap { implicit ec =>
       basicAuth(validateCredentials)
+    }
+  }
+
+  /** Makes an HTTP GET request to the given URL with Basic auth credentials. */
+  def fetchWithAuth(targetUrl: String, wsClient: StandaloneAhcWSClient)(implicit ec: ExecutionContext): Future[String] = {
+    if (targetUrl == null || targetUrl.isEmpty) Future.successful("")
+    else {
+      val username = "api_service"
+      val password = getCred()
+      //CWE-798
+      //SINK
+      wsClient.url(targetUrl).withAuth(username, password, WSAuthScheme.BASIC).get().map(_.body)
     }
   }
 }

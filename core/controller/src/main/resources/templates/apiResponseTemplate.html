@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API response</title>
+  <style>
+    :root { --bg: #0f0f14; --card: #1a1a22; --accent: #7c3aed; --text: #e2e8f0; --muted: #94a3b8; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; min-height: 100vh; }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .body { background: var(--card); border: 1px solid #2d2d3a; border-radius: 8px; padding: 1rem 1.25rem; font-size: 0.875rem; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>API response</h1>
+    <p class="sub">Response body from authenticated request</p>
+    <div class="body">{{RESULT}}</div>
+  </div>
+</body>
+</html>

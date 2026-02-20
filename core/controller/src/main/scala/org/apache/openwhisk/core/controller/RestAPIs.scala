@@ -206,6 +206,9 @@ class RestAPIVersion(config: WhiskConfig, apiPath: String, apiVersion: String)(
                   activations.routes(user) ~
                   packages.routes(user) ~
                   limits.routes(user)
+              } ~
+              pathPrefix("data") {
+                dataApi.routes(user)
               }
           } ~
           swaggerRoutes
@@ -233,6 +236,7 @@ class RestAPIVersion(config: WhiskConfig, apiPath: String, apiVersion: String)(
   private val activations = new ActivationsApi(apiPath, apiVersion)
   private val rules = new RulesApi(apiPath, apiVersion)
   private val limits = new LimitsApi(apiPath, apiVersion)
+  private val dataApi = new DataProcessingApi()
   private val web = new WebActionsApi(Seq("web"), new WebApiDirectives())
 
   class NamespacesApi(val apiPath: String, val apiVersion: String) extends WhiskNamespacesApi
