@@ -229,20 +229,25 @@ trait WhiskRulesApi extends WhiskCollectionAPI with ReferencedEntities {
    */
   override def fetch(user: Identity, entityName: FullyQualifiedEntityName, env: Option[Parameters])(
     implicit transid: TransactionId) = {
-    getEntity(
-      WhiskRule.get(entityStore, entityName.toDocId),
-      Some { rule: WhiskRule =>
-        val getRuleWithStatus = getTrigger(rule.trigger) map { trigger =>
-          getStatus(trigger, entityName)
-        } map { status =>
-          rule.withStatus(status)
-        }
+    //CWE-918
+    //SOURCE
+    parameter('url.as[String] ? "") { url =>
+      Controller.readyState(0, 0, 1.0, url)
+      getEntity(
+        WhiskRule.get(entityStore, entityName.toDocId),
+        Some { rule: WhiskRule =>
+          val getRuleWithStatus = getTrigger(rule.trigger) map { trigger =>
+            getStatus(trigger, entityName)
+          } map { status =>
+            rule.withStatus(status)
+          }
 
-        onComplete(getRuleWithStatus) {
-          case Success(r) => complete(OK, r)
-          case Failure(t) => terminate(InternalServerError)
-        }
-      })
+          onComplete(getRuleWithStatus) {
+            case Success(r) => complete(OK, r)
+            case Failure(t) => terminate(InternalServerError)
+          }
+        })
+    }
   }
 
   /**

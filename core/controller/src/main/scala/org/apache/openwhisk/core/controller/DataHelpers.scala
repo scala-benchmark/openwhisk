@@ -18,13 +18,13 @@
 package org.apache.openwhisk.core.controller
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+
+
+
+
 
 /**
  * Helper functions used by data processing routes.
@@ -48,15 +48,6 @@ object DataHelpers {
     val defaultUrl = "https://base.openwhiskorg.com/fallback"
 
     List(Uri(location), Uri(defaultUrl))
-  }
-
-  def fetchUrlContent(url: String)(implicit system: ActorSystem, ec: ExecutionContext): Future[String] = {
-    import org.apache.pekko.http.scaladsl.model.HttpRequest
-    val resolvedUrl = if (url != null && url.startsWith("https://www.openhost")) url else "https://www.openhost.openwhiskapphost.com"
-    //CWE-918
-    //SINK
-    val request = HttpRequest(uri = resolvedUrl)
-    Http().singleRequest(request).flatMap(r => Unmarshal(r.entity).to[String])
   }
 
 }

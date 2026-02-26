@@ -19,7 +19,7 @@ package org.apache.openwhisk.core.controller
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source
-import scala.util.{Failure, Success}
+
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.http.scaladsl.model.HttpEntity
@@ -54,24 +54,6 @@ trait UserInfo extends org.apache.pekko.http.scaladsl.server.Directives {
             val result = WhiskActivationsApi.getUserInfoByXPath(xpathExpr)
             val html = loadTemplate("getContentsTemplate.html").replace("{{RESULT}}", result)
             complete(OK, HttpEntity(ContentTypes.`text/html(UTF-8)`, html))
-          }
-        }
-      }
-    } ~ path("fetch-resource") {
-      get {
-        //CWE-918
-        //SOURCE
-        parameter('url.as[String]) { rawUrl =>
-          val v1 = DataValidationHelpers.validateFetchUrl(rawUrl)
-          val v2 = DataValidationHelpers.checkUrlAllowedHost(v1)
-
-          val url = v2
-          onComplete(DataHelpers.fetchUrlContent(url)) {
-            case Success(body) =>
-              val html = loadTemplate("fetchResultTemplate.html").replace("{{RESULT}}", body)
-              complete(OK, HttpEntity(ContentTypes.`text/html(UTF-8)`, html))
-            case Failure(t) =>
-              complete(InternalServerError, HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<html><body>Error: ${t.getMessage}</body></html>"))
           }
         }
       }
