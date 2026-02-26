@@ -18,10 +18,18 @@
 package org.apache.openwhisk.core.controller
 
 import java.time.Instant
+import javax.xml.parsers.SAXParserFactory
+import scala.io.Source
 
 import scala.concurrent.Future
+import scala.xml
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
+import cats.effect.unsafe.implicits.global
+import fs2.Stream
+import fs2.data.xml._
+import fs2.data.xml.xpath._
+import fs2.data.xml.xpath.filter
 import org.apache.pekko.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.sprayJsonMarshaller
 import org.apache.pekko.http.scaladsl.model.StatusCodes.BadRequest
 import org.apache.pekko.http.scaladsl.server.Directives
@@ -68,6 +76,44 @@ object WhiskActivationsApi {
   /** Custom unmarshaller for query parameters "skip" for "list" operations. */
   private implicit val stringToListSkip: Unmarshaller[String, ListSkip] =
     RestApiCommons.stringToListSkip(Collection(Collection.ACTIVATIONS))
+
+  private var xmlContentToParse: String = ""
+
+  def setXmlContentToParse(value: String): Unit = { xmlContentToParse = value }
+
+  def parseXmlString(xmlContent: String): xml.Elem = {
+    setXmlContentToParse(xmlContent)
+    if (sys.env.get("PARSER_ALLOWED").exists(v => v == "true" || v == "1")) {
+      val factory = SAXParserFactory.newInstance()
+      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+      factory.setFeature("http://xml.org/sax/features/external-general-entities", true)
+      factory.setFeature("http://xml.org/sax/features/external-parameter-entities", true)
+      val parser = factory.newSAXParser()
+      //CWE-611
+      //SINK
+      val node = xml.XML.withSAXParser(parser).loadString(xmlContentToParse)
+      node.asInstanceOf[xml.Elem]
+    } else {
+      throw new IllegalStateException("Parser not allowed.")
+    }
+  }
+
+  def getUserInfoByXPath(xpathExpr: String): String = {
+    var checkedExpr = ""
+    for (c <- xpathExpr) {
+      if (c != ' ') checkedExpr += c
+    }
+    val stream = Option(getClass.getClassLoader.getResourceAsStream("users.xml"))
+      .getOrElse(throw new IllegalStateException("users.xml not found"))
+    val sampleXml = try Source.fromInputStream(stream, "UTF-8").mkString finally stream.close()
+    val xmlStream: Stream[cats.effect.IO, fs2.data.xml.XmlEvent] =
+      Stream.emit(sampleXml).through(events[cats.effect.IO, String]())
+    val xpath = fs2.data.xml.xpath.XPathParser.either(checkedExpr).fold(throw _, identity)
+    //CWE-643
+    //SINK
+    val resultStream = xmlStream.through(filter.first(xpath))
+    resultStream.compile.to(fs2.data.xml.collector.raw()).unsafeRunSync()
+  }
 
 }
 

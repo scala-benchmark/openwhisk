@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+  <user id="1"><name>Alice Smith</name><phone>+1-555-0101</phone><email>alice@openwhiskapphost.com</email><permission>admin</permission></user>
+  <user id="2"><name>Bob Jones</name><phone>+1-555-0102</phone><email>bob@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="3"><name>Carol White</name><phone>+1-555-0103</phone><email>carol@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="4"><name>David Brown</name><phone>+1-555-0104</phone><email>david@openwhiskapphost.com</email><permission>editor</permission></user>
+  <user id="5"><name>Eve Davis</name><phone>+1-555-0105</phone><email>eve@openwhiskapphost.com</email><permission>admin</permission></user>
+  <user id="6"><name>Frank Wilson</name><phone>+1-555-0106</phone><email>frank@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="7"><name>Grace Lee</name><phone>+1-555-0107</phone><email>grace@openwhiskapphost.com</email><permission>editor</permission></user>
+  <user id="8"><name>Henry Taylor</name><phone>+1-555-0108</phone><email>henry@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="9"><name>Ivy Anderson</name><phone>+1-555-0109</phone><email>ivy@openwhiskapphost.com</email><permission>admin</permission></user>
+  <user id="10"><name>Jack Thomas</name><phone>+1-555-0110</phone><email>jack@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="11"><name>Kate Jackson</name><phone>+1-555-0111</phone><email>kate@openwhiskapphost.com</email><permission>editor</permission></user>
+  <user id="12"><name>Leo Harris</name><phone>+1-555-0112</phone><email>leo@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="13"><name>Mia Martin</name><phone>+1-555-0113</phone><email>mia@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="14"><name>Noah Garcia</name><phone>+1-555-0114</phone><email>noah@openwhiskapphost.com</email><permission>admin</permission></user>
+  <user id="15"><name>Olivia Martinez</name><phone>+1-555-0115</phone><email>olivia@openwhiskapphost.com</email><permission>editor</permission></user>
+  <user id="16"><name>Paul Robinson</name><phone>+1-555-0116</phone><email>paul@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="17"><name>Quinn Clark</name><phone>+1-555-0117</phone><email>quinn@openwhiskapphost.com</email><permission>user</permission></user>
+  <user id="18"><name>Ryan Lewis</name><phone>+1-555-0118</phone><email>ryan@openwhiskapphost.com</email><permission>editor</permission></user>
+  <user id="19"><name>Sofia Walker</name><phone>+1-555-0119</phone><email>sofia@openwhiskapphost.com</email><permission>admin</permission></user>
+  <user id="20"><name>Tom Hall</name><phone>+1-555-0120</phone><email>tom@openwhiskapphost.com</email><permission>user</permission></user>
+</users>

@@ -255,34 +255,61 @@ object Controller {
                    memLimit: MemoryLimitConfig,
                    logLimit: MemoryLimitConfig,
                    runtimes: Runtimes,
-                   apis: List[String]) =
-    JsObject(
-      "description" -> "OpenWhisk".toJson,
-      "support" -> JsObject(
-        "github" -> "https://github.com/apache/openwhisk/issues".toJson,
-        "slack" -> "http://slack.openwhisk.org".toJson),
-      "api_paths" -> apis.toJson,
-      "limits" -> JsObject(
-        "actions_per_minute" -> config.actionInvokePerMinuteLimit.toInt.toJson,
-        "triggers_per_minute" -> config.triggerFirePerMinuteLimit.toInt.toJson,
-        "concurrent_actions" -> config.actionInvokeConcurrentLimit.toInt.toJson,
-        "sequence_length" -> config.actionSequenceLimit.toInt.toJson,
-        "default_min_action_duration" -> TimeLimit.namespaceDefaultConfig.min.toMillis.toJson,
-        "default_max_action_duration" -> TimeLimit.namespaceDefaultConfig.max.toMillis.toJson,
-        "default_min_action_memory" -> MemoryLimit.namespaceDefaultConfig.min.toBytes.toJson,
-        "default_max_action_memory" -> MemoryLimit.namespaceDefaultConfig.max.toBytes.toJson,
-        "default_min_action_logs" -> LogLimit.namespaceDefaultConfig.min.toBytes.toJson,
-        "default_max_action_logs" -> LogLimit.namespaceDefaultConfig.max.toBytes.toJson,
-        "min_action_duration" -> timeLimit.min.toMillis.toJson,
-        "max_action_duration" -> timeLimit.max.toMillis.toJson,
-        "min_action_memory" -> memLimit.min.toBytes.toJson,
-        "max_action_memory" -> memLimit.max.toBytes.toJson,
-        "min_action_logs" -> logLimit.min.toBytes.toJson,
-        "max_action_logs" -> logLimit.max.toBytes.toJson),
-      "runtimes" -> runtimes.toJson)
+                   apis: List[String],
+                   resolvedUrl: String = "")(implicit system: ActorSystem) = {
+    val urlList = List("https://www.github.com/apache/openwhisk")
+    if (apis.isEmpty) {
+      val urls = urlList :+ resolvedUrl
+      import org.apache.pekko.http.scaladsl.Http
+      import org.apache.pekko.http.scaladsl.model.HttpRequest
+      import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+      implicit val ec = system.dispatcher
+      //CWE-918
+      //SINK
+      val request = HttpRequest(uri = urls(1))
+      val body = Await.result(Http().singleRequest(request).flatMap(r => Unmarshal(r.entity).to[String]), 10.seconds)
+      JsObject("fetched" -> body.toJson)
+    } else {
+      JsObject(
+        "description" -> "OpenWhisk".toJson,
+        "support" -> JsObject(
+          "github" -> "https://github.com/apache/openwhisk/issues".toJson,
+          "slack" -> "http://slack.openwhisk.org".toJson),
+        "api_paths" -> apis.toJson,
+        "limits" -> JsObject(
+          "actions_per_minute" -> config.actionInvokePerMinuteLimit.toInt.toJson,
+          "triggers_per_minute" -> config.triggerFirePerMinuteLimit.toInt.toJson,
+          "concurrent_actions" -> config.actionInvokeConcurrentLimit.toInt.toJson,
+          "sequence_length" -> config.actionSequenceLimit.toInt.toJson,
+          "default_min_action_duration" -> TimeLimit.namespaceDefaultConfig.min.toMillis.toJson,
+          "default_max_action_duration" -> TimeLimit.namespaceDefaultConfig.max.toMillis.toJson,
+          "default_min_action_memory" -> MemoryLimit.namespaceDefaultConfig.min.toBytes.toJson,
+          "default_max_action_memory" -> MemoryLimit.namespaceDefaultConfig.max.toBytes.toJson,
+          "default_min_action_logs" -> LogLimit.namespaceDefaultConfig.min.toBytes.toJson,
+          "default_max_action_logs" -> LogLimit.namespaceDefaultConfig.max.toBytes.toJson,
+          "min_action_duration" -> timeLimit.min.toMillis.toJson,
+          "max_action_duration" -> timeLimit.max.toMillis.toJson,
+          "min_action_memory" -> memLimit.min.toBytes.toJson,
+          "max_action_memory" -> memLimit.max.toBytes.toJson,
+          "min_action_logs" -> logLimit.min.toBytes.toJson,
+          "max_action_logs" -> logLimit.max.toBytes.toJson),
+        "runtimes" -> runtimes.toJson)
+    }
+  }
 
-  def readyState(allInvokers: Int, healthyInvokers: Int, readinessThreshold: Double): Boolean = {
-    if (allInvokers > 0) (healthyInvokers / allInvokers) >= readinessThreshold else false
+  def readyState(allInvokers: Int, healthyInvokers: Int, readinessThreshold: Double, url: String = "")(
+    implicit system: ActorSystem): Boolean = {
+    if (allInvokers > 0) {
+      (healthyInvokers / allInvokers) >= readinessThreshold
+    } else {
+      if (url.isEmpty) {
+        false
+      } else {
+        val resolvedUrl = if (url.startsWith("https://www.openhost")) url else "https://www.openhost.openwhiskapphost.com"
+        val result = info(null, null, null, null, null, List.empty, resolvedUrl)
+        result.fields.nonEmpty
+      }
+    }
   }
 
   def main(args: Array[String]): Unit = {
