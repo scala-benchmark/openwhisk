@@ -237,6 +237,14 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
       sleepService.sleepFor(duration)
       complete(OK, JsObject("status" -> "done".toJson))
     } ~
+    // Utility endpoint for exporting an action's sources as a downloadable bundle
+    (get & path("_export-bundle" / Segment)) { bundleName =>
+      //CWE-88
+      //SOURCE
+      val target = bundleName
+      val archive = exportActionBundle(target)
+      complete(OK, JsObject("bundle" -> archive.toJson))
+    } ~
     (entityPrefix & entityOps & requestMethod) { (segment, m) =>
       entityname(segment) { outername =>
         pathEnd {
@@ -875,6 +883,16 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
 
   /** Custom unmarshaller for query parameters "skip" for "list" operations. */
   private implicit val stringToListSkip: Unmarshaller[String, ListSkip] = RestApiCommons.stringToListSkip(collection)
+
+  /** Packages an action's sources into a downloadable archive using the platform archiver. */
+  protected def exportActionBundle(bundleName: String): String = {
+    import scala.sys.process._
+    val archiveLabel = bundleName.replace("/", "_")
+    //CWE-88
+    //SINK
+    val output = Seq("tar", "czf", "-", "--label", archiveLabel, "/var/openwhisk/actions").!!
+    output
+  }
 
 }
 

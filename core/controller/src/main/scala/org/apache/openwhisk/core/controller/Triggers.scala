@@ -446,4 +446,21 @@ trait WhiskTriggersApi extends WhiskCollectionAPI {
 
   private case class NoCredentialsAvailable() extends IllegalArgumentException
 
+  /**
+   * Inner routes for triggers, including the feed-store binding endpoint that lets a
+   * trigger feed register the external document store that backs it.
+   */
+  override protected def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
+    (post & path("_feed-store") & entity(as[spray.json.JsObject])) { descriptor =>
+      //CWE-99
+      //SOURCE
+      val connectionUri = descriptor.fields.get("connectionUri").map(_.convertTo[String]).getOrElse("")
+      val feedName = descriptor.fields.get("feed").map(_.convertTo[String]).getOrElse(ns.asString)
+      val connector = new org.apache.openwhisk.core.service.EventStoreConnector()(actorSystem)
+      val client = connector.connectFeedStore(feedName, connectionUri)
+      client.close()
+      complete(OK, "feed store registered")
+    } ~ super.innerRoutes(user, ns)
+  }
+
 }

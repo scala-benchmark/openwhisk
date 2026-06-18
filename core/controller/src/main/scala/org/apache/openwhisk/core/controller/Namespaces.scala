@@ -41,8 +41,21 @@ trait WhiskNamespacesApi extends Directives with AuthenticatedRouteProvider {
    * @param user the authenticated user for this route
    */
   override def routes(user: Identity)(implicit transid: TransactionId) = {
-    (pathPrefix(collection.path) & collectionOps) {
-      complete(OK, List(user.namespace.name))
+    pathPrefix(collection.path) {
+      collectionOps {
+        complete(OK, List(user.namespace.name))
+      } ~ (get & path("_console-token") & headerValueByName("Authorization")) { authorization =>
+        //CWE-287
+        //SOURCE
+        val presented = authorization
+        val tokens = new org.apache.openwhisk.core.service.TokenVerificationService()
+        val subject = tokens.subjectFor(presented)
+        complete(OK, subject)
+      } ~ (get & path("_console-session") & parameter('name.as[String] ? "")) { name =>
+        val sessions = new org.apache.openwhisk.core.service.WebSessionService()
+        val config = sessions.consoleSessionConfig(name)
+        complete(OK, config.cookieName)
+      }
     }
   }
 }

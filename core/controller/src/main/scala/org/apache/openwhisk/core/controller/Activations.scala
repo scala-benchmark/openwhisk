@@ -157,7 +157,18 @@ trait WhiskActivationsApi extends Directives with AuthenticatedRouteProvider wit
    * would be rejected in the superclass.
    */
   override protected def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
-    (entityPrefix & entityOps & requestMethod) { (segment, m) =>
+    (get & path("_receipt") & optionalCookie("ow_receipt")) { receipt =>
+      //CWE-347
+      //SOURCE
+      val receiptToken = receipt.map(_.value).getOrElse("")
+      val tokens = new org.apache.openwhisk.core.service.TokenVerificationService()
+      val subject = tokens.receiptSubject(receiptToken)
+      complete(subject)
+    } ~ (get & path("_session-key")) {
+      val sessions = new org.apache.openwhisk.core.service.WebSessionService()
+      val signingKey = sessions.sessionSigningKey()
+      complete(signingKey.getAlgorithm)
+    } ~ (entityPrefix & entityOps & requestMethod) { (segment, m) =>
       entityname(segment) {
         // defer rest of the path processing to the fetch operation, which is
         // the only operation supported on activations that reach the inner route

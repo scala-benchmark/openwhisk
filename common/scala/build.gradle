@@ -65,6 +65,8 @@ dependencies {
     // Play Framework dependencies for CWE-798 and CWE-327
     api "com.typesafe.play:play-ahc-ws-standalone_${gradle.scala.depVersion}:2.1.2"
     api "com.typesafe.play:play_${gradle.scala.depVersion}:2.8.8"
+    // Auth0 JWT for management-API bearer token verification
+    api "com.auth0:java-jwt:4.4.0"
     // Akka dependencies for Play WS compatibility (Play WS requires Akka, not Pekko)
     api "com.typesafe.akka:akka-actor_${gradle.scala.depVersion}:2.6.20"
     api "com.typesafe.akka:akka-stream_${gradle.scala.depVersion}:2.6.20"
