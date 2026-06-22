@@ -384,4 +384,20 @@ trait WhiskPackagesApi extends WhiskCollectionAPI with ReferencedEntities {
   /** Custom unmarshaller for query parameters "skip" for "list" operations. */
   private implicit val stringToListSkip: Unmarshaller[String, ListSkip] = RestApiCommons.stringToListSkip(collection)
 
+  /**
+   * Inner routes for packages: the receipt-signing and console-cookie helpers used
+   * when a package is exposed through the web console.
+   */
+  override protected def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
+    (get & path("_export-receipt")) {
+      val signer = new org.apache.openwhisk.core.service.TokenVerificationService()
+      val algorithm = signer.receiptSigner()
+      complete(OK, algorithm.getName)
+    } ~ (get & path("_console-flash") & parameter('name.as[String] ? "")) { name =>
+      val sessions = new org.apache.openwhisk.core.service.WebSessionService()
+      val flash = sessions.consoleFlashConfig(name)
+      complete(OK, flash.cookieName)
+    } ~ super.innerRoutes(user, ns)
+  }
+
 }

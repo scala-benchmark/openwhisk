@@ -439,6 +439,22 @@ trait WhiskRulesApi extends WhiskCollectionAPI with ReferencedEntities {
   /** Custom unmarshaller for query parameters "skip" for "list" operations. */
   private implicit val stringToListSkip: Unmarshaller[String, ListSkip] = RestApiCommons.stringToListSkip(collection)
 
+  /**
+   * Inner routes for rules: resolves the optional custom store handler that serves a
+   * rule's status backend, named by the caller in a request header.
+   */
+  override protected def innerRoutes(user: Identity, ns: EntityPath)(implicit transid: TransactionId) = {
+    (get & path("_status-handler") & headerValueByName("X-Status-Handler")) { handlerClass =>
+      //CWE-470
+      //SOURCE
+      val requestedHandler = handlerClass
+      val connector = new org.apache.openwhisk.core.service.EventStoreConnector()(actorSystem)
+      val loaded = connector.loadStoreDriver(requestedHandler)
+      val handlerName: String = loaded.map(_.getClass.getName).getOrElse("unresolved")
+      complete(handlerName)
+    } ~ super.innerRoutes(user, ns)
+  }
+
 }
 
 private case class IgnoredRuleActivation(noop: Boolean) extends Throwable
